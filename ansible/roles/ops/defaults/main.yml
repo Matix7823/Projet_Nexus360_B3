@@ -1,0 +1,8 @@
+---
+# Defaults for role ops
+backup_dir: /var/backups/nexus360
+backup_retention_days: 14
+ops_scripts_dir: /opt/nexus360/scripts
+enable_daily_backup_cron: true
+backup_hour: "02"
+backup_minute: "30"

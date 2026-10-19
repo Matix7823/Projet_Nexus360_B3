@@ -1,0 +1,4 @@
+---
+# Handlers for role gw
+- name: Restart sysctl
+  ansible.builtin.command: sysctl -p

@@ -1,0 +1,10 @@
+---
+# Defaults for role web
+web_server_package: nginx
+web_service_name: nginx
+web_port_http: 80
+web_port_https: 443
+web_root_dir: /var/www/nexus360
+web_server_name: "portal.nexus360.local"
+web_admin_email: "admin@nexus360.local"
+enable_ssl: false

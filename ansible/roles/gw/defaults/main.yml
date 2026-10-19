@@ -1,0 +1,9 @@
+---
+# Defaults for role gw
+ip_forwarding_enabled: true
+tailscale_package_name: tailscale
+tailscale_accept_routes: true
+advertised_routes: "10.36.0.0/16"
+enable_nat_masquerade: true
+wan_interface: "eth0"
+lan_interface: "eth1"

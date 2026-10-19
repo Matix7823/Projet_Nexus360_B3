@@ -1,0 +1,96 @@
+{
+  "global_groups": [
+    {
+      "name": "GG_Direction",
+      "scope": "Global",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Groupe Métier Direction Générale"
+    },
+    {
+      "name": "GG_RessourcesHumaines",
+      "scope": "Global",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Groupe Métier Ressources Humaines"
+    },
+    {
+      "name": "GG_Finance",
+      "scope": "Global",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Groupe Métier Finance & Comptabilité"
+    },
+    {
+      "name": "GG_Informatique",
+      "scope": "Global",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Groupe Métier Équipe IT & Systèmes"
+    },
+    {
+      "name": "GG_Ventes",
+      "scope": "Global",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Groupe Métier Force Commerciale & Ventes"
+    },
+    {
+      "name": "GG_Production",
+      "scope": "Global",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Groupe Métier Équipe Production Usine"
+    }
+  ],
+  "domain_local_groups": [
+    {
+      "name": "GDL_PARTAGE_DIRECTION_RW",
+      "scope": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Accès Lecture/Écriture au dossier Direction",
+      "members": ["GG_Direction"]
+    },
+    {
+      "name": "GDL_PARTAGE_RH_RW",
+      "scope": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Accès Lecture/Écriture au dossier RH",
+      "members": ["GG_RessourcesHumaines"]
+    },
+    {
+      "name": "GDL_PARTAGE_FINANCE_RW",
+      "scope": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Accès Lecture/Écriture au dossier Finance",
+      "members": ["GG_Finance"]
+    },
+    {
+      "name": "GDL_PARTAGE_IT_FULL",
+      "scope": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Contrôle Total sur les partages IT et outils",
+      "members": ["GG_Informatique"]
+    },
+    {
+      "name": "GDL_PARTAGE_VENTES_RW",
+      "scope": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Accès Lecture/Écriture au dossier Ventes",
+      "members": ["GG_Ventes"]
+    },
+    {
+      "name": "GDL_PARTAGE_COMMUN_RW",
+      "scope": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groups,OU=Nexus360,DC=nexus360,DC=local",
+      "description": "Accès en Modification sur le dossier Partage Commun",
+      "members": ["GG_Direction", "GG_RessourcesHumaines", "GG_Finance", "GG_Informatique", "GG_Ventes", "GG_Production"]
+    }
+  ]
+}

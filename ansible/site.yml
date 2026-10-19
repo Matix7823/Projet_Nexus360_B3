@@ -1,0 +1,49 @@
+---
+# ==========================================
+# Playbook Maître - Déploiement Nexus360
+# ==========================================
+
+# 1. Socle Commun pour tous les serveurs Linux
+- name: "Application du socle commun sur tous les serveurs Linux"
+  hosts: linux
+  become: true
+  gather_facts: true
+  roles:
+    - role: base
+      tags: ['base', 'common', 'system']
+
+# 2. Configuration des Passerelles et Routage
+- name: "Configuration des Passerelles Réseau & Subnet Routers"
+  hosts: gateways
+  become: true
+  gather_facts: true
+  roles:
+    - role: gw
+      tags: ['gw', 'network', 'routing']
+
+# 3. Déploiement des Serveurs Web Applicatifs
+- name: "Déploiement des Serveurs Web et Reverse Proxies"
+  hosts: webservers
+  become: true
+  gather_facts: true
+  roles:
+    - role: web
+      tags: ['web', 'nginx', 'apps']
+
+# 4. Déploiement des Serveurs Opérations et Maintenance
+- name: "Déploiement des Serveurs Opérationnels et Outils"
+  hosts: ops_servers
+  become: true
+  gather_facts: true
+  roles:
+    - role: ops
+      tags: ['ops', 'maintenance', 'backup']
+
+# 5. Déploiement de la Stack d'Observabilité
+- name: "Déploiement de la Supervision Prometheus & Grafana"
+  hosts: monitoring
+  become: true
+  gather_facts: true
+  roles:
+    - role: mon
+      tags: ['mon', 'monitoring', 'metrics']

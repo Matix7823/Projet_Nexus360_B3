@@ -1,0 +1,9 @@
+---
+# Defaults for role mon
+prometheus_version: "2.45.0"
+prometheus_port: 9090
+grafana_port: 3000
+node_exporter_port: 9100
+enable_node_exporter_all: true
+mon_config_dir: /etc/prometheus
+mon_data_dir: /var/lib/prometheus

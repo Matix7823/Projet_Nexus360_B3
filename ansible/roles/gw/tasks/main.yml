@@ -1,0 +1,53 @@
+---
+# Tasks for role gw
+- name: "Activer le routage IPv4 dans sysctl (net.ipv4.ip_forward)"
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: "Activer le routage IPv6 dans sysctl (net.ipv6.conf.all.forwarding)"
+  ansible.posix.sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: "Installer iptables-persistent et paquets réseau"
+  ansible.builtin.package:
+    name:
+      - iptables
+      - iptables-persistent
+      - net-tools
+    state: present
+
+- name: "Configurer les règles de masquage NAT si requis"
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    out_interface: "{{ wan_interface }}"
+    jump: MASQUERADE
+  when: enable_nat_masquerade
+
+- name: "Déployer le script d'initialisation du Subnet Router Tailscale"
+  ansible.builtin.copy:
+    dest: /usr/local/bin/setup-tailscale-gateway.sh
+    owner: root
+    group: root
+    mode: '0750'
+    content: |
+      #!/usr/bin/env bash
+      # Configuration du subnet router pour le site Nexus360
+      set -euo pipefail
+      SUBNET="{{ subnet | default('10.36.0.0/24') }}"
+
+      echo "[Nexus360 GW] Initialisation du Subnet Router pour ${SUBNET}..."
+      if command -v tailscale >/dev/null 2>&1; then
+          tailscale up --advertise-routes="${SUBNET}" --accept-routes --reset
+          echo "[Nexus360 GW] Routes annoncées avec succès."
+      else
+          echo "[Nexus360 GW] Tailscale n'est pas encore installé. Veuillez installer le paquet tailscale."
+      fi

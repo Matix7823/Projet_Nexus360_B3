@@ -1,0 +1,11 @@
+---
+# Handlers for role web
+- name: Reload nginx
+  ansible.builtin.service:
+    name: "{{ web_service_name }}"
+    state: reloaded
+
+- name: Restart nginx
+  ansible.builtin.service:
+    name: "{{ web_service_name }}"
+    state: restarted

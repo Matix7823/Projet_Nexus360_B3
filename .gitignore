@@ -1,0 +1,94 @@
+# ==========================================
+# .gitignore - Projet Nexus360 (B3 T01)
+# ==========================================
+
+# --- Secrets, Clés & Certificats ---
+*.pem
+*.key
+*.pub
+*.crt
+*.pfx
+*.p12
+*.cer
+*.secret
+*.token
+vault_password*
+*.vault
+.env
+.env.*
+!.env.example
+secrets.yml
+vault_keys.txt
+
+# --- Ansible ---
+ansible/*.retry
+*.retry
+.ansible/
+ansible/inventory/local.ini
+ansible/inventory/hosts.local
+ansible/facts_cache/
+ansible/ansible.log
+
+# --- PowerShell ---
+*.log
+*.transcript.txt
+*.ps1xml
+!powershell/**/*.ps1xml
+*CurrentUser*.txt
+*LocalMachine*.txt
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- Éditeurs & IDE ---
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# --- Système d'exploitation ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# --- Sauvegardes & Fichiers temporaires ---
+*.bak
+*.tmp
+*.temp
+*.swp
+*.orig
+*.rej

@@ -1,0 +1,25 @@
+---
+# Defaults for role base
+base_packages:
+  - curl
+  - wget
+  - vim
+  - htop
+  - git
+  - ufw
+  - chrony
+  - sudo
+  - dnsutils
+  - net-tools
+  - iptables
+  - jq
+
+ntp_servers:
+  - 10.36.10.10
+  - pool.ntp.org
+
+ssh_port: 22
+ssh_permit_root_login: "no"
+ssh_password_authentication: "yes"
+admin_user: "ansible"
+timezone: "Europe/Paris"

@@ -1,0 +1,52 @@
+---
+# Tasks for role base
+- name: "Mettre à jour le cache des paquets APT (Debian/Ubuntu)"
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: "Installer les paquets de base essentiels"
+  ansible.builtin.package:
+    name: "{{ base_packages }}"
+    state: present
+
+- name: "Configurer le fuseau horaire du système"
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: "Configurer le service NTP Chrony"
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: /etc/chrony/chrony.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart chrony
+  when: ansible_os_family == "Debian"
+
+- name: "Démarrer et activer Chrony"
+  ansible.builtin.service:
+    name: chrony
+    state: started
+    enabled: true
+
+- name: "Durcir la configuration du service SSH"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    validate: '/usr/sbin/sshd -t -f %s'
+  loop:
+    - { regexp: '^#?Port ', line: 'Port {{ ssh_port }}' }
+    - { regexp: '^#?PermitRootLogin ', line: 'PermitRootLogin {{ ssh_permit_root_login }}' }
+    - { regexp: '^#?PasswordAuthentication ', line: 'PasswordAuthentication {{ ssh_password_authentication }}' }
+  notify: Restart sshd
+
+- name: "Activer le pare-feu UFW et autoriser SSH"
+  community.general.ufw:
+    rule: allow
+    port: "{{ ssh_port }}"
+    proto: tcp
+  when: ansible_os_family == "Debian"

@@ -1,0 +1,59 @@
+{
+  "shares_root": "D:\\Shares",
+  "shares": [
+    {
+      "name": "Direction",
+      "folder_name": "Direction",
+      "description": "Partage confidentiel Direction Générale",
+      "assigned_group": "GDL_PARTAGE_DIRECTION_RW",
+      "ntfs_permission": "Modify",
+      "quota_size_gb": 100,
+      "quota_type": "Hard"
+    },
+    {
+      "name": "RH",
+      "folder_name": "RH",
+      "description": "Données Ressources Humaines et Paie",
+      "assigned_group": "GDL_PARTAGE_RH_RW",
+      "ntfs_permission": "Modify",
+      "quota_size_gb": 50,
+      "quota_type": "Hard"
+    },
+    {
+      "name": "Finance",
+      "folder_name": "Finance",
+      "description": "Comptabilité et Facturation",
+      "assigned_group": "GDL_PARTAGE_FINANCE_RW",
+      "ntfs_permission": "Modify",
+      "quota_size_gb": 80,
+      "quota_type": "Hard"
+    },
+    {
+      "name": "Informatique",
+      "folder_name": "Informatique",
+      "description": "Dépôt technique, ISOs et Scripts",
+      "assigned_group": "GDL_PARTAGE_IT_FULL",
+      "ntfs_permission": "FullControl",
+      "quota_size_gb": 200,
+      "quota_type": "Soft"
+    },
+    {
+      "name": "Ventes",
+      "folder_name": "Ventes",
+      "description": "Propositions commerciales et contrats",
+      "assigned_group": "GDL_PARTAGE_VENTES_RW",
+      "ntfs_permission": "Modify",
+      "quota_size_gb": 120,
+      "quota_type": "Hard"
+    },
+    {
+      "name": "Commun",
+      "folder_name": "Commun",
+      "description": "Échanges transverses inter-services",
+      "assigned_group": "GDL_PARTAGE_COMMUN_RW",
+      "ntfs_permission": "Modify",
+      "quota_size_gb": 300,
+      "quota_type": "Hard"
+    }
+  ]
+}

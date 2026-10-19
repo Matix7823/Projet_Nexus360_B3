@@ -1,0 +1,96 @@
+---
+# Tasks for role web
+- name: "Installer le serveur Web Nginx"
+  ansible.builtin.package:
+    name: "{{ web_server_package }}"
+    state: present
+
+- name: "Créer le répertoire racine pour l'application Web"
+  ansible.builtin.file:
+    path: "{{ web_root_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: "Déployer la page d'accueil de démonstration Nexus360"
+  ansible.builtin.copy:
+    dest: "{{ web_root_dir }}/index.html"
+    owner: www-data
+    group: www-data
+    mode: '0644'
+    content: |
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+          <meta charset="UTF-8">
+          <title>Nexus360 Portal - Agence Nord</title>
+          <style>
+              body { font-family: sans-serif; background: #0f172a; color: #f8fafc; text-align: center; padding: 50px; }
+              .card { background: #1e293b; border-radius: 8px; max-width: 600px; margin: auto; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+              h1 { color: #38bdf8; }
+              .badge { background: #0284c7; padding: 6px 12px; border-radius: 9999px; font-weight: bold; }
+          </style>
+      </head>
+      <body>
+          <div class="card">
+              <h1>Nexus360 Enterprise Portal</h1>
+              <p><span class="badge">Site 3 - Agence Nord</span></p>
+              <p>Serveur applicatif et passerelle d'accès interne opérationnels.</p>
+              <p>Supernet : <code>10.36.0.0/16</code> | Statut : <strong>En ligne</strong></p>
+          </div>
+      </body>
+      </html>
+  notify: Reload nginx
+
+- name: "Configurer le VirtualHost Nginx pour Nexus360"
+  ansible.builtin.copy:
+    dest: /etc/nginx/sites-available/nexus360.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      server {
+          listen {{ web_port_http }};
+          server_name {{ web_server_name }} _;
+
+          root {{ web_root_dir }};
+          index index.html index.htm;
+
+          location / {
+              try_files $uri $uri/ =404;
+          }
+
+          access_log /var/log/nginx/nexus360_access.log;
+          error_log /var/log/nginx/nexus360_error.log;
+      }
+  notify: Reload nginx
+
+- name: "Activer le site Nexus360 dans Nginx"
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/nexus360.conf
+    dest: /etc/nginx/sites-enabled/nexus360.conf
+    state: link
+  notify: Reload nginx
+
+- name: "Supprimer le site par défaut de Nginx"
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload nginx
+
+- name: "Autoriser le trafic HTTP/HTTPS dans le pare-feu UFW"
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "{{ web_port_http }}"
+    - "{{ web_port_https }}"
+  when: ansible_os_family == "Debian"
+
+- name: "Démarrer et activer Nginx"
+  ansible.builtin.service:
+    name: "{{ web_service_name }}"
+    state: started
+    enabled: true

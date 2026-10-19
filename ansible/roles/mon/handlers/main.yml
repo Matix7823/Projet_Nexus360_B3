@@ -1,0 +1,11 @@
+---
+# Handlers for role mon
+- name: Restart prometheus
+  ansible.builtin.service:
+    name: prometheus
+    state: restarted
+
+- name: Restart grafana
+  ansible.builtin.service:
+    name: grafana-server
+    state: restarted

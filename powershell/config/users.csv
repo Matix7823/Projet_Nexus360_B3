@@ -1,0 +1,12 @@
+SamAccountName,FirstName,LastName,Department,Title,Email,OU,Password
+u.dupont,Ugo,Dupont,Direction,Directeur Général,ugo.dupont@nexus360.local,"OU=Direction,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+m.durand,Marie,Durand,RH,Responsable RH,marie.durand@nexus360.local,"OU=RH,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+c.lemoine,Claire,Lemoine,RH,Chargée de Recrutement,claire.lemoine@nexus360.local,"OU=RH,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+j.moreau,Julien,Moreau,Finance,Directeur Financier,julien.moreau@nexus360.local,"OU=Finance,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+s.bernard,Sophie,Bernard,Finance,Comptable,sophie.bernard@nexus360.local,"OU=Finance,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+a.martin,Alexandre,Martin,Informatique,Responsable SI,alexandre.martin@nexus360.local,"OU=Informatique,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+t.leroy,Thomas,Leroy,Informatique,Administrateur Systèmes & Réseaux,thomas.leroy@nexus360.local,"OU=Informatique,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+n.roux,Nicolas,Roux,Informatique,Technicien Support,nicolas.roux@nexus360.local,"OU=Informatique,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+l.petit,Lucas,Petit,Ventes,Directeur Commercial,lucas.petit@nexus360.local,"OU=Ventes,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+e.garcia,Emma,Garcia,Ventes,Ingénieure Commerciale,emma.garcia@nexus360.local,"OU=Ventes,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!
+p.fontaine,Pierre,Fontaine,Production,Responsable d'Usine,pierre.fontaine@nexus360.local,"OU=Production,OU=Users,OU=Nexus360,DC=nexus360,DC=local",NexusSecure2026!

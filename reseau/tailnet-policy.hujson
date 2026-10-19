@@ -1,0 +1,153 @@
+// ============================================================================
+// Nexus360 Tailnet Policy (tailnet-policy.hujson)
+// Architecture Zero-Trust & Routage Subnet Multi-Sites (Supernet 10.36.0.0/16)
+// ============================================================================
+{
+  // Groupes d'administration et d'utilisateurs
+  "groups": {
+    "group:admins": [
+      "admin@nexus360.local",
+      "alexandre.martin@nexus360.local"
+    ],
+    "group:it-ops": [
+      "thomas.leroy@nexus360.local",
+      "nicolas.roux@nexus360.local"
+    ],
+    "group:direction": [
+      "ugo.dupont@nexus360.local"
+    ],
+    "group:rh": [
+      "marie.durand@nexus360.local",
+      "claire.lemoine@nexus360.local"
+    ],
+    "group:finance": [
+      "julien.moreau@nexus360.local",
+      "sophie.bernard@nexus360.local"
+    ],
+    "group:ventes": [
+      "lucas.petit@nexus360.local",
+      "emma.garcia@nexus360.local"
+    ],
+    "group:production": [
+      "pierre.fontaine@nexus360.local"
+    ]
+  },
+
+  // Tags attribués aux machines hôtes et serveurs
+  "tagOwners": {
+    "tag:gateway":      ["group:admins"],
+    "tag:domain-ctrl":  ["group:admins"],
+    "tag:server-web":   ["group:admins", "group:it-ops"],
+    "tag:server-files": ["group:admins", "group:it-ops"],
+    "tag:monitoring":   ["group:admins", "group:it-ops"],
+    "tag:ansible-ops":  ["group:admins"]
+  },
+
+  // Déclaration des Subnet Routers autorisés pour les 5 sites
+  "autoApprovers": {
+    "routes": {
+      "10.36.10.0/24": ["tag:gateway"], // Site 1 : Datacenter / Siège
+      "10.36.20.0/24": ["tag:gateway"], // Site 2 : Usine / Production
+      "10.36.30.0/24": ["tag:gateway"], // Site 3 : Agence Nord
+      "10.36.40.0/24": ["tag:gateway"], // Site 4 : Agence Sud
+      "10.36.50.0/24": ["tag:gateway"]  // Site 5 : Nomades / Edge
+    }
+  },
+
+  // Règles de filtrage de flux (Access Control Lists)
+  "acls": [
+    // 1. Les administrateurs ont un accès complet à l'ensemble du réseau
+    {
+      "action": "accept",
+      "src":    ["group:admins"],
+      "dst":    ["*:*"]
+    },
+
+    // 2. Équipe IT-Ops : Gestion des serveurs en SSH, RDP et ports d'administration
+    {
+      "action": "accept",
+      "src":    ["group:it-ops"],
+      "dst": [
+        "tag:server-web:22,80,443",
+        "tag:server-files:22,3389,445",
+        "tag:monitoring:22,3000,9090",
+        "tag:domain-ctrl:53,88,389,636,3389",
+        "10.36.0.0/16:22,3389,5985,5986"
+      ]
+    },
+
+    // 3. Contrôleur Ansible (NX-OPS-SRV01) : Accès SSH Linux & WinRM Windows
+    {
+      "action": "accept",
+      "src":    ["tag:ansible-ops"],
+      "dst": [
+        "*:22",
+        "*:5985",
+        "*:5986"
+      ]
+    },
+
+    // 4. Serveur de Monitoring (Prometheus) : Collecte métriques Node & Windows Exporter
+    {
+      "action": "accept",
+      "src":    ["tag:monitoring"],
+      "dst": [
+        "*:9100",
+        "*:9182"
+      ]
+    },
+
+    // 5. Trafic Active Directory & DNS entre nœuds du réseau
+    {
+      "action": "accept",
+      "src":    ["*"],
+      "dst": [
+        "tag:domain-ctrl:53,88,123,135,389,445,464,636,3268"
+      ]
+    },
+
+    // 6. Accès utilisateurs aux serveurs de fichiers (SMB)
+    {
+      "action": "accept",
+      "src":    ["group:direction", "group:rh", "group:finance", "group:ventes", "group:production"],
+      "dst":    ["tag:server-files:445"]
+    },
+
+    // 7. Accès au portail Web Nexus360 interne (HTTP/HTTPS)
+    {
+      "action": "accept",
+      "src":    ["*"],
+      "dst":    ["tag:server-web:80,443"]
+    },
+
+    // 8. Consultation des tableaux de bord Grafana par l'IT et la Direction
+    {
+      "action": "accept",
+      "src":    ["group:direction", "group:it-ops"],
+      "dst":    ["tag:monitoring:3000"]
+    }
+  ],
+
+  // Règles SSH Tailscale intégrées
+  "ssh": [
+    {
+      "action": "accept",
+      "src":    ["group:admins"],
+      "dst":    ["tag:gateway", "tag:server-web", "tag:monitoring", "tag:ansible-ops"],
+      "users":  ["root", "ansible", "autogroup:nonroot"]
+    }
+  ],
+
+  // Tests unitaires de conformité des ACLs
+  "tests": [
+    {
+      "src": "group:admins",
+      "accept": ["10.36.10.10:88", "10.36.30.20:443", "10.36.40.15:445"]
+    },
+    {
+      "src": "group:ventes",
+      "accept": ["10.36.30.20:443", "tag:server-files:445"],
+      "deny":   ["10.36.10.10:3389", "tag:monitoring:9090"]
+    }
+  ]
+}

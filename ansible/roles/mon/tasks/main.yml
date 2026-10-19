@@ -1,0 +1,73 @@
+---
+# Tasks for role mon
+- name: "Installer Prometheus et Node Exporter depuis les dépôts"
+  ansible.builtin.package:
+    name:
+      - prometheus
+      - prometheus-node-exporter
+    state: present
+
+- name: "Configurer Prometheus (prometheus.yml)"
+  ansible.builtin.copy:
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+    content: |
+      global:
+        scrape_interval: 15s
+        evaluation_interval: 15s
+
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']
+
+        - job_name: 'node_exporter'
+          static_configs:
+            - targets:
+                - '10.36.10.1:9100'   # GW-DC01
+                - '10.36.10.20:9100'  # OPS-SRV01
+                - '10.36.10.30:9100'  # MON-SRV01
+                - '10.36.20.1:9100'   # GW-PROD01
+                - '10.36.30.1:9100'   # GW-NORD01
+                - '10.36.30.20:9100'  # WEB-SRV01
+                - '10.36.40.1:9100'   # GW-SUD01
+
+        - job_name: 'windows_exporter'
+          static_configs:
+            - targets:
+                - '10.36.10.10:9182'  # DC01
+                - '10.36.20.10:9182'  # RODC02
+                - '10.36.30.15:9182'  # FS-NORD
+                - '10.36.40.15:9182'  # FS-SUD
+  notify: Restart prometheus
+
+- name: "Démarrer et activer le service Prometheus"
+  ansible.builtin.service:
+    name: prometheus
+    state: started
+    enabled: true
+
+- name: "Démarrer et activer Node Exporter"
+  ansible.builtin.service:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
+
+- name: "Installer le serveur Grafana"
+  ansible.builtin.package:
+    name: grafana
+    state: present
+  ignore_errors: true
+
+- name: "Autoriser les ports de supervision dans UFW"
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "{{ prometheus_port }}"
+    - "{{ grafana_port }}"
+    - "{{ node_exporter_port }}"
+  when: ansible_os_family == "Debian"

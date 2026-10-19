@@ -1,0 +1,54 @@
+---
+# Tasks for role ops
+- name: "Créer les répertoires d'administration et de sauvegarde"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  loop:
+    - "{{ backup_dir }}"
+    - "{{ ops_scripts_dir }}"
+
+- name: "Déployer le script de sauvegarde système automatisé"
+  ansible.builtin.copy:
+    dest: "{{ ops_scripts_dir }}/system_backup.sh"
+    owner: root
+    group: root
+    mode: '0750'
+    content: |
+      #!/usr/bin/env bash
+      # Nexus360 - Sauvegarde quotidienne des configurations et bases
+      set -euo pipefail
+      BACKUP_DEST="{{ backup_dir }}"
+      TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+      ARCHIVE_NAME="nexus360_cfg_${TIMESTAMP}.tar.gz"
+
+      echo "[$(date)] Début de la sauvegarde sur $(hostname)..."
+      tar -czf "${BACKUP_DEST}/${ARCHIVE_NAME}" \
+          --exclude='/etc/shadow' \
+          /etc/hosts /etc/resolv.conf /etc/network /etc/nginx 2>/dev/null || true
+
+      # Nettoyage des sauvegardes plus anciennes que la rétention
+      find "${BACKUP_DEST}" -type f -name "nexus360_cfg_*.tar.gz" -mtime +{{ backup_retention_days }} -delete
+      echo "[$(date)] Sauvegarde terminée avec succès : ${ARCHIVE_NAME}"
+
+- name: "Configurer la tâche Cron de sauvegarde quotidienne"
+  ansible.builtin.cron:
+    name: "Nexus360 Daily Configuration Backup"
+    hour: "{{ backup_hour }}"
+    minute: "{{ backup_minute }}"
+    job: "{{ ops_scripts_dir }}/system_backup.sh >> /var/log/nexus360_backup.log 2>&1"
+    user: root
+    state: "{{ 'present' if enable_daily_backup_cron else 'absent' }}"
+
+- name: "Installer les outils de diagnostic système avancés"
+  ansible.builtin.package:
+    name:
+      - tcpdump
+      - traceroute
+      - iperf3
+      - iotop
+      - sysstat
+    state: present
