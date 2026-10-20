@@ -5,6 +5,7 @@
 [![PowerShell](https://img.shields.io/badge/Scripts-PowerShell%20Idempotents-5391FE.svg)](scripts/windows/)
 [![Passerelle Linux](https://img.shields.io/badge/Gateway-Rocky%20Linux%2010-EE0000.svg)](docs/runbooks/Runbook_Rebuild_LNXGW01.md)
 [![Mesh Network](https://img.shields.io/badge/Mesh%20Network-Tailscale%20WireGuard-2463EB.svg)](reseau/tailnet-policy.hujson)
+[![CI Validation](https://github.com/Matix7823/Projet_Nexus360_B3/actions/workflows/ci.yml/badge.svg)](https://github.com/Matix7823/Projet_Nexus360_B3/actions/workflows/ci.yml)
 
 ---
 
@@ -149,7 +150,17 @@ cd C:\Users\mathi\Desktop\Projet_Nexus360_B3
 
 ---
 
-## 6. Références & Documentation Complémentaire
+## 6. Intégration Continue (CI/CD) & Qualité du Code
+
+Le dépôt intègre un pipeline GitHub Actions automatisé ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) assurant la validation continue des artefacts du Site 1 :
+- **Validation CSV** : Contrôle du schéma et du décompte des 15 utilisateurs de [`config/utilisateurs.csv`](config/utilisateurs.csv).
+- **Validation JSON Schema** : Contrôle structurel de l'arborescence des OU et groupes dans [`config/ad_structure.json`](config/ad_structure.json).
+- **Analyse Syntaxique PowerShell** : Analyse statique de tous les scripts d'automatisation (`scripts/windows/*.ps1`) via l'AST parser du moteur PowerShell.
+- **Intégrité de la Documentation** : Contrôle d'existence et de non-régression du DAT et de l'ensemble des runbooks.
+
+---
+
+## 7. Références & Documentation Complémentaire
 - [Dossier d'Architecture Technique - Site 1](docs/DAT_Site1.md)
 - [Journal d'Exploitation & Suivi de Séance](docs/JOURNAL_EXPLOITATION.md)
 - [Runbook d'Importation & Rollback AD](docs/runbooks/Runbook_Import_Users.md)
