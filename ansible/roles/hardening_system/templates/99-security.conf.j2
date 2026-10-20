@@ -1,0 +1,56 @@
+# ==============================================================================
+# Nexus360 - Kernel Sysctl Hardening Configuration (ANSSI / CIS Level 2)
+# Exigence B5 - Recommandations de securite pour systeme GNU/Linux
+# Fichier genere par Ansible - Ne pas modifier manuellement
+# ==============================================================================
+
+# 1. Routage et Forwarding IP
+{% if (is_gateway | default(false)) or ('gateways' in group_names) or (inventory_hostname == 'LNXGW01') %}
+# Actif sur la passerelle / routeur de sous-reseau (LNXGW01)
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 1
+{% else %}
+# Desactivation stricte de l'IP Forwarding sur tous les serveurs applicatifs et d'administration
+net.ipv4.ip_forward = 0
+net.ipv6.conf.all.forwarding = 0
+{% endif %}
+
+# 2. Protection contre le IP Spoofing (Reverse Path Filtering RFC 3704)
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# 3. Protection contre les attaques SYN Flood (SYN Cookies)
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_max_syn_backlog = 2048
+net.ipv4.tcp_synack_retries = 2
+
+# 4. Rejet strict des redirections ICMP (Accept Redirects)
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
+# 5. Desactivation de l'emission de redirections ICMP (Send Redirects)
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# 6. Rejet du routage par la source (Source Routing)
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv6.conf.all.accept_source_route = 0
+net.ipv6.conf.default.accept_source_route = 0
+
+# 7. Protection contre le Ping Broadcast (Smurf Attacks) et reponses ICMP erronnees
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+
+# 8. Journalisation des paquets anormaux (Martian Packets)
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+
+# 9. Durcissement memoire du noyau et protection contre les attaques locales
+kernel.randomize_va_space = 2
+fs.protected_hardlinks = 1
+fs.protected_symlinks = 1
+fs.protected_fifos = 2
+fs.protected_regular = 2

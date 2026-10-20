@@ -1,0 +1,14 @@
+---
+# Defaults for role hardening_system (ANSSI / CIS Level 2)
+bastion_ip: "10.36.11.25"
+bastion_subnets:
+  - "10.36.11.25/32"
+  - "10.36.10.20/32"
+
+# Sysctl parameters
+sysctl_security_conf: /etc/sysctl.d/99-security.conf
+
+# Port and services configuration
+allow_business_http: "{{ inventory_hostname in groups['webservers'] | default(false) }}"
+allow_business_smb: false
+allow_tailscale_wireguard: "{{ inventory_hostname in groups['gateways'] | default(false) }}"

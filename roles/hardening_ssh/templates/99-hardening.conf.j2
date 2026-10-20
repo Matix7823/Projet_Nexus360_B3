@@ -1,0 +1,29 @@
+# ==============================================================================
+# Nexus360 - SSH Daemon Hardening Configuration (ANSSI / CIS Level 2)
+# Exigence B5 - Deploiement Securise du Site 1 & Infrastructure Globale
+# Fichier genere automatiquement par Ansible - Ne pas modifier manuellement
+# ==============================================================================
+
+# 1. Controle d'acces et restrictions d'authentification
+PermitRootLogin {{ ssh_permit_root_login | default('no') }}
+PasswordAuthentication {{ ssh_password_authentication | default('no') }}
+PubkeyAuthentication {{ ssh_pubkey_authentication | default('yes') }}
+KbdInteractiveAuthentication {{ ssh_kbd_interactive_authentication | default('no') }}
+X11Forwarding {{ ssh_x11_forwarding | default('no') }}
+MaxAuthTries {{ ssh_max_auth_tries | default(3) }}
+AllowGroups {{ ssh_allowed_groups | default(['g_ssh_admins', 'g_exploitation']) | join(' ') }}
+
+# 2. Cryptographie durcie (KEX, Ciphers, MACs conformes ANSSI)
+KexAlgorithms {{ ssh_kex_algorithms | default('curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512') }}
+Ciphers {{ ssh_ciphers | default('chacha20-poly1305@openssh.com,aes256-gcm@openssh.org') }}
+MACs {{ ssh_macs | default('hmac-sha2-512-etm@openssh.com') }}
+
+# 3. Parametres de robustesse et d'audit de session
+LogLevel VERBOSE
+ClientAliveInterval 300
+ClientAliveCountMax 2
+MaxSessions 5
+IgnoreRhosts yes
+HostbasedAuthentication no
+PermitEmptyPasswords no
+PermitUserEnvironment no

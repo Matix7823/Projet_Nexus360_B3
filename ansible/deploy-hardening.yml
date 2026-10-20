@@ -1,0 +1,15 @@
+---
+# ==============================================================================
+# Playbook Dédié : Application du Durcissement ANSSI / CIS (Exigence B5)
+# Déploiement : PKI SSH ED25519, Hardening SSH, Kernel Sysctl, SELinux, Firewalld
+# ==============================================================================
+
+- name: "Application du durcissement système et SSH sur tous les hôtes Linux"
+  hosts: linux
+  become: true
+  gather_facts: true
+  roles:
+    - role: hardening_system
+      tags: ['system', 'sysctl', 'selinux', 'firewalld']
+    - role: hardening_ssh
+      tags: ['ssh', 'crypto', 'pki']

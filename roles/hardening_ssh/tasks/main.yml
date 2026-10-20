@@ -1,0 +1,70 @@
+---
+# Direct mirror of ansible/roles/hardening_ssh/tasks/main.yml
+- name: "Créer les groupes de sécurité SSH autorisés"
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+    system: true
+  loop: "{{ ssh_allowed_groups | default(['g_ssh_admins', 'g_exploitation']) }}"
+
+- name: "Vérifier la présence de l'utilisateur d'administration {{ ssh_admin_user | default('ansible') }}"
+  ansible.builtin.user:
+    name: "{{ ssh_admin_user | default('ansible') }}"
+    state: present
+    groups: "{{ ssh_allowed_groups | default(['g_ssh_admins', 'g_exploitation']) }}"
+    append: true
+    shell: /bin/bash
+    create_home: true
+
+- name: "S'assurer du répertoire .ssh sécurisé pour {{ ssh_admin_user | default('ansible') }}"
+  ansible.builtin.file:
+    path: "~{{ ssh_admin_user | default('ansible') }}/.ssh"
+    state: directory
+    owner: "{{ ssh_admin_user | default('ansible') }}"
+    group: "{{ ssh_admin_user | default('ansible') }}"
+    mode: '0700'
+
+- name: "Déployer la clé publique SSH ED25519 d'administration si fournie"
+  ansible.posix.authorized_key:
+    user: "{{ ssh_admin_user | default('ansible') }}"
+    state: present
+    key: "{{ ssh_admin_pubkey | default('') }}"
+    exclusive: false
+  when: (ssh_admin_pubkey is defined) and (ssh_admin_pubkey | length > 0)
+
+- name: "S'assurer de l'existence du dossier /etc/ssh/sshd_config.d"
+  ansible.builtin.file:
+    path: /etc/ssh/sshd_config.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: "S'assurer de l'inclusion de sshd_config.d dans sshd_config principal"
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Include /etc/ssh/sshd_config\.d/\*\.conf'
+    line: 'Include /etc/ssh/sshd_config.d/*.conf'
+    state: present
+    insertafter: BOF
+
+- name: "Commenter les directives conflictuelles dans /etc/ssh/sshd_config principal"
+  ansible.builtin.replace:
+    path: /etc/ssh/sshd_config
+    regexp: '^(?i)\s*(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication|KbdInteractiveAuthentication|ChallengeResponseAuthentication|X11Forwarding|MaxAuthTries|AllowGroups|KexAlgorithms|Ciphers|MACs)\s+.*$'
+    replace: '# [Overridden by sshd_config.d/99-hardening.conf] \g<0>'
+
+- name: "Déployer le fichier de durcissement SSH 99-hardening.conf"
+  ansible.builtin.template:
+    src: 99-hardening.conf.j2
+    dest: /etc/ssh/sshd_config.d/99-hardening.conf
+    owner: root
+    group: root
+    mode: '0600'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: Restart sshd
+
+- name: "Valider la configuration globale du service SSH"
+  ansible.builtin.command:
+    cmd: /usr/sbin/sshd -t
+  changed_when: false

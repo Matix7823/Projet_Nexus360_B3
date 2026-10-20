@@ -1,0 +1,29 @@
+# ==============================================================================
+# Nexus360 - SSH Daemon Hardening Configuration (ANSSI / CIS Level 2)
+# Exigence B5 - Deploiement Securise du Site 1 & Infrastructure Globale
+# Fichier genere automatiquement par Ansible - Ne pas modifier manuellement
+# ==============================================================================
+
+# 1. Controle d'acces et restrictions d'authentification
+PermitRootLogin {{ ssh_permit_root_login }}
+PasswordAuthentication {{ ssh_password_authentication }}
+PubkeyAuthentication {{ ssh_pubkey_authentication }}
+KbdInteractiveAuthentication {{ ssh_kbd_interactive_authentication }}
+X11Forwarding {{ ssh_x11_forwarding }}
+MaxAuthTries {{ ssh_max_auth_tries }}
+AllowGroups {{ ssh_allowed_groups | join(' ') }}
+
+# 2. Cryptographie durcie (KEX, Ciphers, MACs conformes ANSSI)
+KexAlgorithms {{ ssh_kex_algorithms }}
+Ciphers {{ ssh_ciphers }}
+MACs {{ ssh_macs }}
+
+# 3. Parametres de robustesse et d'audit de session
+LogLevel VERBOSE
+ClientAliveInterval 300
+ClientAliveCountMax 2
+MaxSessions 5
+IgnoreRhosts yes
+HostbasedAuthentication no
+PermitEmptyPasswords no
+PermitUserEnvironment no
