@@ -63,6 +63,7 @@ jobs:
           $docs = @(
             "docs/DAT_Site1.md",
             "docs/JOURNAL_EXPLOITATION.md",
+            "docs/SECURITY_HARDENING_BASELINE.md",
             "docs/runbooks/Runbook_Import_Users.md",
             "docs/runbooks/Runbook_Rebuild_LNXGW01.md"
           )

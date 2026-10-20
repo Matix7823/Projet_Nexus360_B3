@@ -40,12 +40,14 @@ Projet_Nexus360_B3/
 │   ├── 01-Create-OU-and-AGDLP.ps1             # Création de l'arborescence OU et des groupes GG / DL
 │   ├── 02-Import-Users.ps1                    # Import des 15 utilisateurs et provisionnement Tiering (T0/T1/T2)
 │   ├── 03-Configure-DNS-and-GPO.ps1           # Zone inverse, alias CNAME, autoreprise services, GPO T0 & WSUS
-│   └── 04-Setup-DHCP-Failover.ps1             # Scope DHCP Site 1 et partenariat Failover LoadBalance 50/50
+│   ├── 04-Setup-DHCP-Failover.ps1             # (Exigence A1) Scope DHCP Site 1 et partenariat Failover LoadBalance 50/50
+│   └── 05-Security-Hardening.ps1              # (Exigence B5) Désactivation LLMNR, NetBIOS, SMBv1, TLS obsolètes et signature SMB
 │
 ├── docs/                                      # Documentation technique et opérationnelle
-│   ├── DAT_Site1.md                           # Dossier d'Architecture Technique détaillé du Site 1 (Paris)
-│   ├── JOURNAL_EXPLOITATION.md                # Journal chronologique détaillé des actions de séance
-│   └── runbooks/                              # Runbooks d'exploitation pas à pas
+│   ├── DAT_Site1.md                           # (Exigence E1) Dossier d'Architecture Technique détaillé du Site 1 (Paris)
+│   ├── JOURNAL_EXPLOITATION.md                # (Exigence D4) Historique chronologique détaillé des actions de séance
+│   ├── SECURITY_HARDENING_BASELINE.md         # (Exigence B5) Documentation du durcissement SSH (ED25519) et Windows Baseline
+│   └── runbooks/                              # (Exigence E2) Runbooks d'exploitation pas à pas
 │       ├── Runbook_Import_Users.md            # Procédure d'importation CSV et plan de Rollback
 │       ├── Runbook_Rebuild_LNXGW01.md         # Reconstruction de la passerelle Rocky Linux (NAT/Tailscale)
 │       ├── RUNBOOK_ACTIVE_DIRECTORY_AGDLP.md  # Standard AGDLP
@@ -57,9 +59,10 @@ Projet_Nexus360_B3/
 │
 ├── ansible/                                   # Automatisation des socles Linux multi-sites
 │   ├── site.yml                               # Playbook maître
-│   └── roles/                                 # Rôles base, web, ops, mon, gw
+│   ├── deploy-hardening.yml                   # Playbook dédié au durcissement ANSSI / CIS
+│   └── roles/                                 # Rôles base, gw, web, ops, mon, hardening_ssh, hardening_system
 │
-└── powershell/                                # Scripts legacy et modules complémentaires
+└── powershell/                                # Scripts complémentaires et toolbox d'infrastructure
 ```
 
 ---
@@ -133,6 +136,16 @@ cd C:\Users\mathi\Desktop\Projet_Nexus360_B3
 & ".\scripts\windows\04-Setup-DHCP-Failover.ps1"
 ```
 
+### Étape 4.6 : Application du Durcissement de Sécurité (Exigence B5)
+```powershell
+# 1. Durcissement Windows Server 2025 et déploiement de la GPO Baseline
+& ".\scripts\windows\05-Security-Hardening.ps1"
+
+# 2. Durcissement des hôtes Linux via Ansible (depuis le bastion LNX-OPS01)
+cd ansible
+ansible-playbook -i inventory/hosts.ini deploy-hardening.yml
+```
+
 ---
 
 ## 5. Recette & Validation des Services
@@ -144,9 +157,13 @@ cd C:\Users\mathi\Desktop\Projet_Nexus360_B3
 | **Alias CNAME intranet** | `Resolve-DnsName intranet.ad.nexus360.test` | Pointe sur `lnx-web01.ad.nexus360.test` |
 | **Vérification Utilisateurs** | `(Get-ADUser -SearchBase "OU=Utilisateurs,OU=Nexus360,DC=ad,DC=nexus360,DC=test" -Filter *).Count` | Exactement `15` |
 | **Comptes de Tiering** | `Get-ADUser adm-t0-mathis`, `adm-t1-mathis`, `adm-t2-mathis` | Présents dans leurs OU respectives |
-| **GPO appliquées** | `gpresult /r` (sur `CLI-WIN01`) | `GPO_Security_Block_T0_Logon` et `GPO_WSUS_Clients` |
+| **GPO appliquées** | `gpresult /r` (sur `CLI-WIN01`) | `GPO_Security_Block_T0_Logon`, `GPO_WSUS_Clients`, `GPO_Security_Hardening_Baseline` |
 | **Reprise de service** | `sc.exe qfailure DNS` | Actions `restart/60000/restart/60000/restart/60000` |
 | **Bail DHCP client** | `ipconfig /all` (sur `CLI-WIN01`) | IP dans `10.36.11.100-200`, Gateway `10.36.11.1`, DNS `10.36.11.10` |
+| **Signature SMB & SMBv1 OFF** | `Get-SmbServerConfiguration \| Select RequireSecuritySignature, EnableSMB1Protocol` | `RequireSecuritySignature = True`, `EnableSMB1Protocol = False` |
+| **Chiffrement Schannel** | `Get-ItemProperty "HKLM:\...\SCHANNEL\Protocols\TLS 1.2\Server"` | `Enabled = 1` (SSL 2/3 et TLS 1.0/1.1 à `0`) |
+| **Auth SSH ED25519 & No Root** | `ssh -o PreferredAuthentications=password user@lnx-web01` | Permission denied (publickey obligatoire, root désactivé) |
+| **SELinux Enforcing** | `ssh user@lnxgw01 getenforce` | `Enforcing` |
 
 ---
 
@@ -156,12 +173,13 @@ Le dépôt intègre un pipeline GitHub Actions automatisé ([`.github/workflows/
 - **Validation CSV** : Contrôle du schéma et du décompte des 15 utilisateurs de [`config/utilisateurs.csv`](config/utilisateurs.csv).
 - **Validation JSON Schema** : Contrôle structurel de l'arborescence des OU et groupes dans [`config/ad_structure.json`](config/ad_structure.json).
 - **Analyse Syntaxique PowerShell** : Analyse statique de tous les scripts d'automatisation (`scripts/windows/*.ps1`) via l'AST parser du moteur PowerShell.
-- **Intégrité de la Documentation** : Contrôle d'existence et de non-régression du DAT et de l'ensemble des runbooks.
+- **Intégrité de la Documentation** : Contrôle d'existence et de non-régression du DAT, du document de durcissement et de l'ensemble des runbooks.
 
 ---
 
 ## 7. Références & Documentation Complémentaire
 - [Dossier d'Architecture Technique - Site 1](docs/DAT_Site1.md)
+- [Baseline de Durcissement de Sécurité (ANSSI / CIS)](docs/SECURITY_HARDENING_BASELINE.md)
 - [Journal d'Exploitation & Suivi de Séance](docs/JOURNAL_EXPLOITATION.md)
 - [Runbook d'Importation & Rollback AD](docs/runbooks/Runbook_Import_Users.md)
 - [Runbook de Reconstruction Passerelle Rocky Linux](docs/runbooks/Runbook_Rebuild_LNXGW01.md)
