@@ -11,6 +11,10 @@
   roles:
     - role: base
       tags: ['base', 'common', 'system']
+    - role: hardening_system
+      tags: ['hardening', 'security', 'sysctl', 'selinux', 'firewalld']
+    - role: hardening_ssh
+      tags: ['hardening', 'security', 'ssh', 'pki']
 
 # 2. Configuration des Passerelles et Routage
 - name: "Configuration des Passerelles Réseau & Subnet Routers"

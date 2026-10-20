@@ -1,205 +1,185 @@
 # Nexus360 - Infrastructure & Automatisation Multi-Sites (Promotion B3 - Équipe T01)
 
-[![Architecture](https://img.shields.io/badge/Architecture-Multi--Sites-blue.svg)](#topologie-des-5-sites)
-[![Ansible](https://img.shields.io/badge/Automation-Ansible-EE0000.svg)](file:///ansible/)
-[![PowerShell](https://img.shields.io/badge/Scripts-PowerShell%207-5391FE.svg)](file:///powershell/)
-[![VPN](https://img.shields.io/badge/Mesh%20Network-Tailscale-2463EB.svg)](file:///reseau/tailnet-policy.hujson)
+[![Architecture](https://img.shields.io/badge/Architecture-Site%201%20Paris-blue.svg)](docs/DAT_Site1.md)
+[![Domaine AD](https://img.shields.io/badge/AD%20DS-ad.nexus360.test-green.svg)](scripts/windows/)
+[![PowerShell](https://img.shields.io/badge/Scripts-PowerShell%20Idempotents-5391FE.svg)](scripts/windows/)
+[![Passerelle Linux](https://img.shields.io/badge/Gateway-Rocky%20Linux%2010-EE0000.svg)](docs/runbooks/Runbook_Rebuild_LNXGW01.md)
+[![Mesh Network](https://img.shields.io/badge/Mesh%20Network-Tailscale%20WireGuard-2463EB.svg)](reseau/tailnet-policy.hujson)
+[![CI Validation](https://github.com/Matix7823/Projet_Nexus360_B3/actions/workflows/ci.yml/badge.svg)](https://github.com/Matix7823/Projet_Nexus360_B3/actions/workflows/ci.yml)
 
 ---
 
-## 1. Présentation du Projet Nexus360
+## 1. Présentation de la Mission T01 - Site 1 (Paris)
 
-Le projet **Nexus360** a pour objectif de concevoir, déployer, sécuriser et automatiser une infrastructure d'entreprise distribuée sur **5 sites interconnectés**. 
+Dans le cadre du projet **Nexus360**, la mission **T01** a pour objectif de concevoir, déployer, sécuriser et automatiser le socle d'infrastructure du **Site 1 (Paris)**, siège central et cœur d'identité de l'entreprise.
 
-Face aux exigences modernes de résilience, de scalabilité et de conformité aux standards de sécurité, le projet repose sur :
-- **Un réseau maillé chiffré (Mesh Overlay)** propulsé par **Tailscale (WireGuard)** complété par un plan d'adressage hiérarchique unifié en `10.36.0.0/16`.
-- **Une gestion d'identité et de gouvernance des accès centralisée** via **Active Directory Domain Services (AD DS)** suivant le modèle rigoureux **AGDLP** (Accounts -> Global Groups -> Domain Local Groups -> Permissions) et des quotas de stockage **FSRM**.
-- **Une automatisation complète de la configuration système** via **Ansible** pour le déploiement reproductible des socles Linux (serveurs web, services opérationnels, passerelles réseau, stack d'observabilité).
-- **Une observabilité de bout en bout** (Prometheus, Grafana, Node Exporter) assurant la supervision proactive des métriques systèmes et des alertes opérationnelles.
-- **Une documentation technique vivante** : Dossier d'Architecture Technique ([`DAT.md`](DAT.md)), Journal d'exploitation ([`JOURNAL.md`](JOURNAL.md)), runbooks et fiches d'incidents.
-
----
-
-## 2. Membres de l'Équipe T01 & Rôles
-
-| Rôle | Responsable | Périmètre d'Intervention |
-| :--- | :--- | :--- |
-| **Tech Lead & Architecte Réseau** | Équipe T01 | Architecture globale, Tailscale Mesh, plan d'adressage IP `10.36.0.0/16`, passerelles de routage |
-| **Ingénieur Systèmes Windows & Sécurité** | Équipe T01 | Active Directory, modèle AGDLP, quotas FSRM, scripts PowerShell de provisionnement |
-| **Ingénieur Automatisation & DevOps** | Équipe T01 | Playbooks Ansible, modularité des rôles, durcissement OS Linux (SSH, firewall, services) |
-| **Ingénieur Observabilité & Support** | Équipe T01 | Stack de métriques (Prometheus / Grafana), runbooks d'exploitation, gestion des incidents |
+### Architecture Clé du Site 1 :
+- **Domaine Active Directory** : `ad.nexus360.test`
+- **Passerelle de routage & sécurité (`LNXGW01`)** : Rocky Linux 10 (`10.36.11.1` / VIP Tailscale `10.36.10.1`), routage IPv4 kernel, NAT Masquerading via `firewalld`, et Subnet Router Tailscale annonçant `10.36.11.0/24`.
+- **Contrôleur de domaine principal (`SRV-DC01`)** : Windows Server 2025 (`10.36.11.10`), rôles AD DS, DNS Server (zones directe et inverse `36.10.in-addr.arpa`), DHCP Server (scope `10.36.11.0/24`), et point de mise à jour WSUS (port 8530).
+- **Client de recette (`CLI-WIN01`)** : Windows 11 Entreprise configuré en attribution DHCP dynamique (plage `10.36.11.100` à `10.36.11.200`), joint au domaine dans l'OU `Nexus360/Postes`.
+- **Interconnexion Site 2** : Sous-réseau distant `10.36.12.0/24`, second DC `SRV-DC02` (`10.36.12.11`) avec préparation de la haute disponibilité DHCP Failover en LoadBalance 50/50.
 
 ---
 
-## 3. Topologie des 5 Sites
+## 2. Structure du Dépôt
 
-L'entreprise Nexus360 est répartie sur 5 environnements interconnectés, chacun disposant de sous-réseaux alloués dans le supernet `10.36.0.0/16` :
-
-```mermaid
-graph TD
-    subgraph WAN_Overlay ["Réseau Maillé Chiffré WireGuard (Tailnet Policy)"]
-        DC_GW["GW-DC (Siège / Datacenter)<br/>10.36.10.1"]
-        SITE1_GW["GW-PROD (Site Industriel)<br/>10.36.20.1"]
-        SITE2_GW["GW-NORD (Agence Lille)<br/>10.36.30.1"]
-        SITE3_GW["GW-SUD (Agence Lyon)<br/>10.36.40.1"]
-        NOMAD_GW["GW-NOMAD (VDI / Nomades)<br/>10.36.50.1"]
-    end
-
-    DC_GW <-->|Tailscale Mesh| SITE1_GW
-    DC_GW <-->|Tailscale Mesh| SITE2_GW
-    DC_GW <-->|Tailscale Mesh| SITE3_GW
-    DC_GW <-->|Tailscale Mesh| NOMAD_GW
-    SITE1_GW <--> SITE2_GW
-    SITE2_GW <--> SITE3_GW
-
-    subgraph Site1 ["Site 1 - Siège & Datacenter Principal (10.36.10.0/24)"]
-        DC01["DC-PRIMARY (Windows Server AD/DNS)"]
-        SRV_MON["SRV-MON (Prometheus & Grafana)"]
-        SRV_OPS["SRV-OPS (GitLab Runner / Ansible Controller)"]
-    end
-
-    subgraph Site2 ["Site 2 - Site Industriel / Usine (10.36.20.0/24)"]
-        SRV_IOT["SRV-IOT (Collecteurs & Supervision Usine)"]
-        DC02["DC-RODC (Contrôleur en lecture seule)"]
-    end
-
-    subgraph Site3 ["Site 3 - Agence Nord (10.36.30.0/24)"]
-        FS_NORD["SRV-FS01 (Partages fichiers & FSRM)"]
-        WEB_EXT["SRV-WEB (Reverse Proxy & Portails)"]
-    end
-
-    subgraph Site4 ["Site 4 - Agence Sud (10.36.40.0/24)"]
-        FS_SUD["SRV-FS02 (Partages locaux & Backups)"]
-    end
-
-    subgraph Site5 ["Site 5 - Nomades & Cloud Edge (10.36.50.0/24)"]
-        VDI_POOL["Postes distants & Passerelles sécurisées"]
-    end
-
-    DC_GW --- Site1
-    SITE1_GW --- Site2
-    SITE2_GW --- Site3
-    SITE3_GW --- Site4
-    NOMAD_GW --- Site5
-```
-
-### Synthèse des Sites :
-1. **Site 1 (Siège / Datacenter - `10.36.10.0/24`)** : Cœur de l'infrastructure, héberge les rôles maîtres AD DS, le monitoring central et les contrôleurs d'automatisation.
-2. **Site 2 (Site Industriel / Production - `10.36.20.0/24`)** : Unité de production nécessitant une isolation réseau stricte et un contrôleur de domaine RODC.
-3. **Site 3 (Agence Nord - `10.36.30.0/24`)** : Agence régionale avec serveurs applicatifs web et stockage de proximité.
-4. **Site 4 (Agence Sud - `10.36.40.0/24`)** : Pôle commercial avec serveur de fichiers décentralisé et réplication de sauvegarde.
-5. **Site 5 (Nomades & Cloud Edge - `10.36.50.0/24`)** : Gestion des accès distants sécurisés par politique Tailnet basée sur l'identité (Zero Trust ACLs).
-
----
-
-## 4. Démarche de Déploiement
-
-Le déploiement suit un cycle rigoureux articulé en 5 phases séquentielles :
-
-```mermaid
-flowchart LR
-    P1["Phase 1<br/>Socle Réseau & Tailnet"] --> P2["Phase 2<br/>Active Directory & AGDLP"]
-    P2 --> P3["Phase 3<br/>Automatisation Ansible"]
-    P3 --> P4["Phase 4<br/>Services Web, Ops & Stockage"]
-    P4 --> P5["Phase 5<br/>Supervision & Recette"]
-```
-
-1. **Phase 1 : Socle Réseau & Interconnexion**
-   - Mise en place du plan d'adressage `10.36.0.0/16`.
-   - Déploiement des routeurs de sous-réseaux (*Subnet Routers*) via Tailscale.
-   - Application de la politique de sécurité [`reseau/tailnet-policy.hujson`](file:///reseau/tailnet-policy.hujson).
-2. **Phase 2 : Socle Active Directory & Gouvernance des Accès**
-   - Création de la forêt et du domaine `nexus360.local`.
-   - Hiérarchisation des Unités d'Organisation (OU).
-   - Déploiement automatisé des utilisateurs et groupes via PowerShell ([`powershell/scripts/`](file:///powershell/scripts/)).
-   - Mise en œuvre du modèle AGDLP et des quotas de fichiers FSRM ([`powershell/config/`](file:///powershell/config/)).
-3. **Phase 3 : Industrialisation Ansible**
-   - Configuration de l'environnement ([`ansible/ansible.cfg`](file:///ansible/ansible.cfg)).
-   - Déploiement du rôle `base` pour standardiser les distributions Linux (Debian / Ubuntu / Rocky).
-   - Configuration du rôle de passerelle réseau `gw`.
-4. **Phase 4 : Services Web, Opérationnels et Stockage**
-   - Déploiement des serveurs web via le rôle `web` (Nginx durci, reverse proxy).
-   - Automatisation des tâches de maintenance avec le rôle `ops`.
-   - Sécurisation des partages et volumes de données.
-5. **Phase 5 : Observabilité & Validation Opérationnelle**
-   - Déploiement de la stack Prometheus & Grafana avec le rôle `mon`.
-   - Validation de la matrice des flux et des tests de bascule.
-   - Formalisation des fiches d'incidents et des procédures d'exploitation.
-
----
-
-## 5. Structure du Dépôt Git
+Le dépôt est structuré de manière rigoureuse pour séparer configurations, scripts d'automatisation, politiques réseau et documentation d'exploitation :
 
 ```text
 Projet_Nexus360_B3/
-├── README.md                      # Présentation globale, topologie et démarche
-├── DAT.md                         # Dossier d'Architecture Technique de référence
-├── JOURNAL.md                     # Journal de bord et suivi chronologique des séances
-├── .gitignore                     # Règles d'exclusion Git (clés, secrets, caches)
+├── README.md                                  # Présentation globale, architecture et guide de déploiement
+├── DAT.md                                     # DAT macro du projet multi-sites
+├── JOURNAL.md                                 # Journal de bord général
 │
-├── ansible/                       # Orchestration et gestion de configuration
-│   ├── ansible.cfg                # Configuration générale d'Ansible
-│   ├── site.yml                   # Playbook maître d'orchestration
-│   ├── inventory/                 # Inventaires des machines hôtes
-│   │   └── hosts.ini
-│   └── roles/                     # Rôles Ansible modulaires
-│       ├── base/                  # Rôle socle (mises à jour, paquets, SSH, NTP)
-│       ├── web/                   # Rôle serveur Web (Nginx, HTTPS, vhosts)
-│       ├── ops/                   # Rôle opérationnel (sauvegardes, maintenance)
-│       ├── mon/                   # Rôle métriques & supervision (Prometheus/Grafana)
-│       └── gw/                    # Rôle passerelle réseau (routage, nftables)
+├── config/                                    # Fichiers sources et données déclaratives du Site 1
+│   ├── utilisateurs.csv                       # Annuaire des 15 utilisateurs répartis dans 4 services
+│   └── ad_structure.json                      # Schéma JSON des OU, groupes AGDLP et comptes Tiering
 │
-├── powershell/                    # Automatisation Active Directory & Windows Server
-│   ├── config/                    # Fichiers sources déclaratifs
-│   │   ├── users.csv              # Annuaire des utilisateurs à provisionner
-│   │   ├── groups.json            # Définition des groupes AGDLP
-│   │   └── shares.json            # Configuration des partages et quotas FSRM
-│   └── scripts/                   # Scripts PowerShell d'exécution
-│       ├── 01_Deploy-ActiveDirectoryBase.ps1
-│       ├── 02_Provision-UsersAndAGDLP.ps1
-│       ├── 03_Configure-FSRMQuotasAndShares.ps1
-│       └── Toolbox-D2.ps1         # Boîte à outils de diagnostics et maintenance
+├── scripts/windows/                           # Scripts PowerShell d'automatisation idempotents
+│   ├── 01-Create-OU-and-AGDLP.ps1             # Création de l'arborescence OU et des groupes GG / DL
+│   ├── 02-Import-Users.ps1                    # Import des 15 utilisateurs et provisionnement Tiering (T0/T1/T2)
+│   ├── 03-Configure-DNS-and-GPO.ps1           # Zone inverse, alias CNAME, autoreprise services, GPO T0 & WSUS
+│   ├── 04-Setup-DHCP-Failover.ps1             # (Exigence A1) Scope DHCP Site 1 et partenariat Failover LoadBalance 50/50
+│   └── 05-Security-Hardening.ps1              # (Exigence B5) Désactivation LLMNR, NetBIOS, SMBv1, TLS obsolètes et signature SMB
 │
-├── reseau/                        # Configurations réseau et sécurité
-│   └── tailnet-policy.hujson      # Politique ACL Tailscale (Mesh WireGuard Zero Trust)
+├── docs/                                      # Documentation technique et opérationnelle
+│   ├── DAT_Site1.md                           # (Exigence E1) Dossier d'Architecture Technique détaillé du Site 1 (Paris)
+│   ├── JOURNAL_EXPLOITATION.md                # (Exigence D4) Historique chronologique détaillé des actions de séance
+│   ├── SECURITY_HARDENING_BASELINE.md         # (Exigence B5) Documentation du durcissement SSH (ED25519) et Windows Baseline
+│   └── runbooks/                              # (Exigence E2) Runbooks d'exploitation pas à pas
+│       ├── Runbook_Import_Users.md            # Procédure d'importation CSV et plan de Rollback
+│       ├── Runbook_Rebuild_LNXGW01.md         # Reconstruction de la passerelle Rocky Linux (NAT/Tailscale)
+│       ├── RUNBOOK_ACTIVE_DIRECTORY_AGDLP.md  # Standard AGDLP
+│       ├── RUNBOOK_DEPLOIEMENT_ANSIBLE.md     # Déploiement Ansible
+│       └── RUNBOOK_INTERCONNEXION_TAILNET.md  # Configuration du Tailnet
 │
-└── docs/                          # Documentation opérationnelle
-    ├── runbooks/                  # Guides de procédures techniques
-    │   ├── RUNBOOK_DEPLOIEMENT_ANSIBLE.md
-    │   ├── RUNBOOK_ACTIVE_DIRECTORY_AGDLP.md
-    │   └── RUNBOOK_INTERCONNEXION_TAILNET.md
-    └── incidents/                 # Post-mortems et fiches d'incidents
-        ├── INCIDENT_TEMPLATE.md
-        └── INC-2026-001_RUPTURE_ROUTAGE_INTERSITE.md
+├── reseau/                                    # Fichiers de configuration réseau
+│   └── tailnet-policy.hujson                  # Politique de sécurité et ACLs Tailscale
+│
+├── ansible/                                   # Automatisation des socles Linux multi-sites
+│   ├── site.yml                               # Playbook maître
+│   ├── deploy-hardening.yml                   # Playbook dédié au durcissement ANSSI / CIS
+│   └── roles/                                 # Rôles base, gw, web, ops, mon, hardening_ssh, hardening_system
+│
+└── powershell/                                # Scripts complémentaires et toolbox d'infrastructure
 ```
 
 ---
 
-## 6. Prise en Main Rapide
+## 3. Modèle de Sécurité : Tiering T0 / T1 / T2 & AGDLP
 
-### Prérequis
-- Git `>= 2.30`
-- Ansible `>= 2.15`
-- PowerShell `>= 7.2` (sur contrôleurs Windows)
-- Client Tailscale connecté au tailnet du projet
+Nexus360 applique les meilleures pratiques de sécurité d'entreprise (recommandations ANSSI / Microsoft) :
 
-### Déploiement de l'Infrastructure Ansible
-```bash
-# Se placer dans le dossier Ansible
-cd ansible
+```mermaid
+flowchart TD
+    subgraph T0 ["Tier 0 - Cœur d'Identité & Contrôle Absolu"]
+        DC["SRV-DC01 (10.36.11.10) / SRV-DC02 (10.36.12.11)<br/>Contrôleurs de Domaine, PKI, AD DS"]
+        ADM_T0["adm-t0-mathis (GG_Admins_T0, Domain Admins)"]
+    end
 
-# Vérifier la connectivité avec l'ensemble des nœuds
-ansible -i inventory/hosts.ini all -m ping
+    subgraph T1 ["Tier 1 - Serveurs & Applications d'Entreprise"]
+        SRV["Serveurs Membres, Stockage, WSUS, Services"]
+        ADM_T1["adm-t1-mathis (GG_Admins_T1)"]
+    end
 
-# Lancer le déploiement complet
-ansible-playbook -i inventory/hosts.ini site.yml
+    subgraph T2 ["Tier 2 - Postes de Travail & Utilisateurs"]
+        CLI["Postes Clients Windows 11 (CLI-WIN01)"]
+        ADM_T2["adm-t2-mathis (GG_Admins_T2)"]
+        USERS["15 Utilisateurs (Compta, Direction, Exploitation, Info)"]
+    end
+
+    T0 -.->|GPO : Interdiction formelle de session| T1
+    T0 -.->|GPO : Interdiction formelle de session| T2
+    T1 -.->|GPO : Interdiction formelle de session| T2
 ```
 
-### Initialisation Active Directory & AGDLP
+- **GPO_Security_Block_T0_Logon** : Bloque l'ouverture de session locale et RDP des administrateurs Tier 0 (`GG_Admins_T0`) sur les postes Tier 2 et serveurs Tier 1 pour éviter la dispersion des identifiants maîtres dans la mémoire LSASS.
+- **GPO_WSUS_Clients** : Configure l'adresse du serveur WSUS (`http://SRV-DC01.ad.nexus360.test:8530`) et les horaires de déploiement automatique des correctifs sur les postes clients.
+
+---
+
+## 4. Instructions Pas-à-Pas pour Déployer & Rejouer l'Automatisation
+
+Tous les scripts situés dans `scripts/windows/` sont conçus pour être **strictement idempotents** : ils peuvent être rejoués à tout moment sans provoquer d'erreur ni dupliquer d'objets.
+
+### Étape 4.1 : Déploiement de la Passerelle Linux `LNXGW01`
+Consulter et exécuter le runbook dédié :
+👉 [Runbook Reconstruction LNXGW01](docs/runbooks/Runbook_Rebuild_LNXGW01.md)
+
+### Étape 4.2 : Initialisation de l'Arborescence OU et des Groupes AGDLP
+Depuis une session PowerShell Administrateur sur `SRV-DC01` :
 ```powershell
-# Exécuter depuis une console PowerShell en tant qu'administrateur de domaine
-cd powershell\scripts
-.\01_Deploy-ActiveDirectoryBase.ps1
-.\02_Provision-UsersAndAGDLP.ps1
-.\03_Configure-FSRMQuotasAndShares.ps1
+# 1. Se positionner à la racine du dépôt
+cd C:\Users\mathi\Desktop\Projet_Nexus360_B3
+
+# 2. Exécuter le script de création de structure
+& ".\scripts\windows\01-Create-OU-and-AGDLP.ps1"
 ```
+
+### Étape 4.3 : Importation des 15 Utilisateurs et Comptes de Tiering
+```powershell
+# Exécuter le script de provisionnement des utilisateurs
+& ".\scripts\windows\02-Import-Users.ps1"
+```
+*Note* : En cas de besoin de réinitialisation complète, suivre la procédure de rollback documentée dans [Runbook Import Users](docs/runbooks/Runbook_Import_Users.md).
+
+### Étape 4.4 : Configuration DNS, Autoreprise des Services et GPOs
+```powershell
+# Déploiement de la zone inverse, de l'alias intranet, des sc.exe failure et des GPOs
+& ".\scripts\windows\03-Configure-DNS-and-GPO.ps1"
+```
+
+### Étape 4.5 : Configuration du Serveur DHCP & Préparation Failover
+```powershell
+# Configuration de l'étendue DHCP Site 1 et préparation du lien avec SRV-DC02
+& ".\scripts\windows\04-Setup-DHCP-Failover.ps1"
+```
+
+### Étape 4.6 : Application du Durcissement de Sécurité (Exigence B5)
+```powershell
+# 1. Durcissement Windows Server 2025 et déploiement de la GPO Baseline
+& ".\scripts\windows\05-Security-Hardening.ps1"
+
+# 2. Durcissement des hôtes Linux via Ansible (depuis le bastion LNX-OPS01)
+cd ansible
+ansible-playbook -i inventory/hosts.ini deploy-hardening.yml
+```
+
+---
+
+## 5. Recette & Validation des Services
+
+| Test de Validation | Commande de Recette | Résultat Attendu |
+| :--- | :--- | :--- |
+| **Résolution DNS directe** | `Resolve-DnsName SRV-DC01.ad.nexus360.test` | Résout sur `10.36.11.10` |
+| **Résolution DNS inverse** | `Resolve-DnsName 10.36.11.10` | Résout sur `SRV-DC01.ad.nexus360.test` |
+| **Alias CNAME intranet** | `Resolve-DnsName intranet.ad.nexus360.test` | Pointe sur `lnx-web01.ad.nexus360.test` |
+| **Vérification Utilisateurs** | `(Get-ADUser -SearchBase "OU=Utilisateurs,OU=Nexus360,DC=ad,DC=nexus360,DC=test" -Filter *).Count` | Exactement `15` |
+| **Comptes de Tiering** | `Get-ADUser adm-t0-mathis`, `adm-t1-mathis`, `adm-t2-mathis` | Présents dans leurs OU respectives |
+| **GPO appliquées** | `gpresult /r` (sur `CLI-WIN01`) | `GPO_Security_Block_T0_Logon`, `GPO_WSUS_Clients`, `GPO_Security_Hardening_Baseline` |
+| **Reprise de service** | `sc.exe qfailure DNS` | Actions `restart/60000/restart/60000/restart/60000` |
+| **Bail DHCP client** | `ipconfig /all` (sur `CLI-WIN01`) | IP dans `10.36.11.100-200`, Gateway `10.36.11.1`, DNS `10.36.11.10` |
+| **Signature SMB & SMBv1 OFF** | `Get-SmbServerConfiguration \| Select RequireSecuritySignature, EnableSMB1Protocol` | `RequireSecuritySignature = True`, `EnableSMB1Protocol = False` |
+| **Chiffrement Schannel** | `Get-ItemProperty "HKLM:\...\SCHANNEL\Protocols\TLS 1.2\Server"` | `Enabled = 1` (SSL 2/3 et TLS 1.0/1.1 à `0`) |
+| **Auth SSH ED25519 & No Root** | `ssh -o PreferredAuthentications=password user@lnx-web01` | Permission denied (publickey obligatoire, root désactivé) |
+| **SELinux Enforcing** | `ssh user@lnxgw01 getenforce` | `Enforcing` |
+
+---
+
+## 6. Intégration Continue (CI/CD) & Qualité du Code
+
+Le dépôt intègre un pipeline GitHub Actions automatisé ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) assurant la validation continue des artefacts du Site 1 :
+- **Validation CSV** : Contrôle du schéma et du décompte des 15 utilisateurs de [`config/utilisateurs.csv`](config/utilisateurs.csv).
+- **Validation JSON Schema** : Contrôle structurel de l'arborescence des OU et groupes dans [`config/ad_structure.json`](config/ad_structure.json).
+- **Analyse Syntaxique PowerShell** : Analyse statique de tous les scripts d'automatisation (`scripts/windows/*.ps1`) via l'AST parser du moteur PowerShell.
+- **Intégrité de la Documentation** : Contrôle d'existence et de non-régression du DAT, du document de durcissement et de l'ensemble des runbooks.
+
+---
+
+## 7. Références & Documentation Complémentaire
+- [Dossier d'Architecture Technique - Site 1](docs/DAT_Site1.md)
+- [Baseline de Durcissement de Sécurité (ANSSI / CIS)](docs/SECURITY_HARDENING_BASELINE.md)
+- [Journal d'Exploitation & Suivi de Séance](docs/JOURNAL_EXPLOITATION.md)
+- [Runbook d'Importation & Rollback AD](docs/runbooks/Runbook_Import_Users.md)
+- [Runbook de Reconstruction Passerelle Rocky Linux](docs/runbooks/Runbook_Rebuild_LNXGW01.md)

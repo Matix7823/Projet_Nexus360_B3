@@ -1,0 +1,106 @@
+---
+# Mirror of ansible/roles/hardening_system/tasks/main.yml
+- name: "Déployer la configuration de durcissement sysctl /etc/sysctl.d/99-security.conf"
+  ansible.builtin.template:
+    src: 99-security.conf.j2
+    dest: /etc/sysctl.d/99-security.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Apply sysctl
+
+- name: "Appliquer immédiatement les paramètres sysctl"
+  ansible.builtin.command:
+    cmd: /usr/sbin/sysctl --system
+  changed_when: false
+
+- name: "Configurer SELinux en mode Enforcing dans /etc/selinux/config"
+  ansible.builtin.lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: 'SELINUX=enforcing'
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: "Configurer le type SELinux sur targeted"
+  ansible.builtin.lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUXTYPE='
+    line: 'SELINUXTYPE=targeted'
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: "Activer immédiatement SELinux en mode Enforcing au runtime"
+  ansible.builtin.command:
+    cmd: /usr/sbin/setenforce 1
+  failed_when: false
+  changed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: "Installer firewalld sur les hôtes Rocky Linux / RedHat"
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: "Démarrer et activer le service firewalld"
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+  when: ansible_os_family == "RedHat"
+
+- name: "Supprimer l'accès SSH global ouvert à tout le réseau dans firewalld"
+  ansible.posix.firewalld:
+    service: ssh
+    zone: public
+    permanent: true
+    state: absent
+    immediate: true
+  when: ansible_os_family == "RedHat"
+  ignore_errors: true
+
+- name: "Restreindre l'accès SSH au bastion uniquement via rich-rules firewalld"
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source address="{{ item }}" service name="ssh" accept'
+    zone: public
+    permanent: true
+    state: enabled
+    immediate: true
+  loop:
+    - "10.36.11.25/32"
+    - "10.36.10.20/32"
+  when: ansible_os_family == "RedHat"
+
+- name: "Autoriser le service Web HTTP (port 80) pour les serveurs Web dans firewalld"
+  ansible.posix.firewalld:
+    service: http
+    zone: public
+    permanent: true
+    state: enabled
+    immediate: true
+  when:
+    - ansible_os_family == "RedHat"
+    - (inventory_hostname in groups['webservers'] | default([])) or (inventory_hostname == 'LNX-WEB01')
+
+- name: "Autoriser le service Web HTTPS (port 443) pour les serveurs Web dans firewalld"
+  ansible.posix.firewalld:
+    service: https
+    zone: public
+    permanent: true
+    state: enabled
+    immediate: true
+  when:
+    - ansible_os_family == "RedHat"
+    - (inventory_hostname in groups['webservers'] | default([])) or (inventory_hostname == 'LNX-WEB01')
+
+- name: "Autoriser le port Tailscale WireGuard (41641/udp) sur la passerelle LNXGW01"
+  ansible.posix.firewalld:
+    port: "41641/udp"
+    zone: public
+    permanent: true
+    state: enabled
+    immediate: true
+  when:
+    - ansible_os_family == "RedHat"
+    - (inventory_hostname in groups['gateways'] | default([])) or (inventory_hostname == 'LNXGW01')

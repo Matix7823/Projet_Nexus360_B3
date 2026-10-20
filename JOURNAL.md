@@ -55,13 +55,23 @@ Ce document retrace l'historique chronologique des séances, les décisions tech
 
 ---
 
-### [Séance 2 - Planifiée] : Déploiement du Contrôleur AD DS & Automatisation PowerShell
-* **Membres prévus** : Équipe T01
-* **Objectifs prévisionnels** :
-  - Déployer le rôle AD DS sur Windows Server 2022 (`nexus360.local`).
-  - Exécuter `01_Deploy-ActiveDirectoryBase.ps1` et `02_Provision-UsersAndAGDLP.ps1`.
-  - Mettre en place les partages et quotas avec `03_Configure-FSRMQuotasAndShares.ps1`.
-  - Valider l'application des droits NTFS effectifs sur un poste client de test.
+### [2026-10-20] - Séance 2 : Déploiement Socle Site 1, Contrôleur AD DS & Automatisation Sécurisée
+* **Membres présents** : Mathis (Tech Lead / DevOps), Équipe T01 au complet
+* **Objectifs planifiés** :
+  - [x] Déployer la passerelle Rocky Linux 10 (`LNXGW01`) avec NAT Masquerading et Subnet Router Tailscale (`10.36.11.0/24`)
+  - [x] Promouvoir le contrôleur de domaine `SRV-DC01` (Windows Server 2025) dans `ad.nexus360.test`
+  - [x] Déployer l'arborescence OU et les groupes AGDLP via script idempotent (`01-Create-OU-and-AGDLP.ps1`)
+  - [x] Importer les 15 utilisateurs depuis `config/utilisateurs.csv` et créer les comptes de Tiering (`02-Import-Users.ps1`)
+  - [x] Configurer la zone inverse DNS `36.10.in-addr.arpa`, le CNAME `intranet`, autoreprise services et GPO T0/WSUS (`03-Configure-DNS-and-GPO.ps1`)
+  - [x] Configurer le scope DHCP Site 1 et préparer le partenariat Failover LoadBalance 50/50 avec `SRV-DC02` (`04-Setup-DHCP-Failover.ps1`)
+* **Réalisations & Actions techniques** :
+  - Se référer au journal détaillé : [`docs/JOURNAL_EXPLOITATION.md`](docs/JOURNAL_EXPLOITATION.md).
+  - Validation du client Windows 11 `CLI-WIN01` avec bail DHCP et restriction GPO effective pour `adm-t0-mathis`.
+  - Documentation technique et runbooks formalisés dans `docs/DAT_Site1.md`, `docs/runbooks/Runbook_Import_Users.md` et `docs/runbooks/Runbook_Rebuild_LNXGW01.md`.
+* **Statut des tests & validations** :
+  - Résolution DNS directe/inverse et alias intranet validés.
+  - Distribution DHCP validée sur `CLI-WIN01`.
+  - Test de blocage d'accès interactif T0 validé par GPO.
 
 ---
 

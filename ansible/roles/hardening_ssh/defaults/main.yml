@@ -1,0 +1,27 @@
+---
+# Defaults for role hardening_ssh
+ssh_config_file: /etc/ssh/sshd_config
+ssh_config_dir: /etc/ssh/sshd_config.d
+ssh_hardening_conf: "{{ ssh_config_dir }}/99-hardening.conf"
+
+# Groupes autorises a se connecter en SSH (ANSSI / PAM / AD)
+ssh_allowed_groups:
+  - g_ssh_admins
+  - g_exploitation
+
+# Utilisateur d'administration systeme a associer
+ssh_admin_user: ansible
+ssh_admin_pubkey: ""
+
+# Algorithmes cryptographiques durcis conformes ANSSI B5 / CIS
+ssh_kex_algorithms: "curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512"
+ssh_ciphers: "chacha20-poly1305@openssh.com,aes256-gcm@openssh.org"
+ssh_macs: "hmac-sha2-512-etm@openssh.com"
+
+# Parametres generaux de durcissement
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
+ssh_pubkey_authentication: "yes"
+ssh_kbd_interactive_authentication: "no"
+ssh_x11_forwarding: "no"
+ssh_max_auth_tries: 3

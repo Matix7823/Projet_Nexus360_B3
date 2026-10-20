@@ -1,0 +1,75 @@
+name: Nexus360 CI - Lint & Compliance Validation
+
+on:
+  push:
+    branches: [ "main", "feature/**" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate-infrastructure:
+    name: Validate Scripts & Declarative Configurations
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate CSV Structure (15 users)
+        shell: pwsh
+        run: |
+          Write-Host "Checking config/utilisateurs.csv..."
+          $csv = Import-Csv -Path "config/utilisateurs.csv"
+          if ($csv.Count -ne 15) {
+            throw "Expected exactly 15 users in CSV, but found $($csv.Count)"
+          }
+          $requiredColumns = @("FirstName", "LastName", "SamAccountName", "Department")
+          foreach ($col in $requiredColumns) {
+            if (-not ($csv[0].PSObject.Properties.Name -contains $col)) {
+              throw "Missing required column: $col"
+            }
+          }
+          Write-Host "CSV validation successful: 15 users with valid schema." -ForegroundColor Green
+
+      - name: Validate JSON Schema (AD Structure)
+        shell: pwsh
+        run: |
+          Write-Host "Validating config/ad_structure.json..."
+          $jsonContent = Get-Content -Raw -Path "config/ad_structure.json"
+          $parsed = $jsonContent | ConvertFrom-Json
+          if (-not $parsed.organizationalUnits -or -not $parsed.groups) {
+            throw "ad_structure.json missing organizationalUnits or groups!"
+          }
+          Write-Host "JSON schema valid: $($parsed.organizationalUnits.Count) OUs, $($parsed.groups.Count) groups." -ForegroundColor Green
+
+      - name: Lint PowerShell Scripts Syntax
+        shell: pwsh
+        run: |
+          Write-Host "Analyzing PowerShell automation scripts syntax..."
+          $scripts = Get-ChildItem -Path "scripts/windows/*.ps1"
+          foreach ($s in $scripts) {
+            Write-Host "Analyzing $($s.Name)..."
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($s.FullName, [ref]$null, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              throw "Syntax error found in $($s.Name): $($errors -join ', ')"
+            }
+          }
+          Write-Host "All PowerShell scripts passed syntax validation." -ForegroundColor Green
+
+      - name: Validate Technical Documentation Presence
+        shell: pwsh
+        run: |
+          $docs = @(
+            "docs/DAT_Site1.md",
+            "docs/JOURNAL_EXPLOITATION.md",
+            "docs/SECURITY_HARDENING_BASELINE.md",
+            "docs/runbooks/Runbook_Import_Users.md",
+            "docs/runbooks/Runbook_Rebuild_LNXGW01.md"
+          )
+          foreach ($d in $docs) {
+            if (-not (Test-Path $d)) {
+              throw "Required documentation missing: $d"
+            }
+          }
+          Write-Host "All technical documentation and runbooks present." -ForegroundColor Green
