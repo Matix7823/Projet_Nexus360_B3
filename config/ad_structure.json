@@ -1,0 +1,126 @@
+{
+  "domain": "ad.nexus360.test",
+  "netbios": "NEXUS360",
+  "baseOU": "Nexus360",
+  "organizationalUnits": [
+    {
+      "name": "Nexus360",
+      "path": "DC=ad,DC=nexus360,DC=test",
+      "description": "Racine organisationnelle Nexus360"
+    },
+    {
+      "name": "Administration",
+      "path": "OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Comptes d'administration et de gestion selon le modèle Tiering"
+    },
+    {
+      "name": "T0-Admins",
+      "path": "OU=Administration,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "tier": "Tier 0",
+      "description": "Administrateurs d'infrastructure, du domaine AD DS et PKI"
+    },
+    {
+      "name": "T1-Admins",
+      "path": "OU=Administration,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "tier": "Tier 1",
+      "description": "Administrateurs des serveurs applicatifs, stockage et bases de donnees"
+    },
+    {
+      "name": "T2-Admins",
+      "path": "OU=Administration,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "tier": "Tier 2",
+      "description": "Techniciens support postes de travail et peripheriques utilisateurs"
+    },
+    {
+      "name": "Services",
+      "path": "OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Serveurs et services d'infrastructure"
+    },
+    {
+      "name": "Serveurs-T1",
+      "path": "OU=Services,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "tier": "Tier 1",
+      "description": "Serveurs d'infrastructure et d'application Tier 1"
+    },
+    {
+      "name": "Postes",
+      "path": "OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "tier": "Tier 2",
+      "description": "Postes de travail des collaborateurs (Windows 11)"
+    },
+    {
+      "name": "Utilisateurs",
+      "path": "OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Comptes utilisateurs standard de l'entreprise"
+    },
+    {
+      "name": "Groupes",
+      "path": "OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Groupes globaux (GG) et groupes locaux de domaine (DL)"
+    }
+  ],
+  "groups": [
+    {
+      "name": "GG_Comptabilite",
+      "type": "Global",
+      "category": "Security",
+      "ou": "OU=Groupes,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Groupe Global - Equipe Comptabilite"
+    },
+    {
+      "name": "GG_Direction",
+      "type": "Global",
+      "category": "Security",
+      "ou": "OU=Groupes,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Groupe Global - Direction Generale"
+    },
+    {
+      "name": "GG_Exploitation",
+      "type": "Global",
+      "category": "Security",
+      "ou": "OU=Groupes,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Groupe Global - Equipe Exploitation & Production"
+    },
+    {
+      "name": "GG_Informatique",
+      "type": "Global",
+      "category": "Security",
+      "ou": "OU=Groupes,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Groupe Global - Equipe Informatique & DevOps"
+    },
+    {
+      "name": "DL_Compta_Share_RW",
+      "type": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groupes,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Domain Local - Acces Lecture/Ecriture partage Comptabilite"
+    },
+    {
+      "name": "DL_Direction_Share_RW",
+      "type": "DomainLocal",
+      "category": "Security",
+      "ou": "OU=Groupes,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Domain Local - Acces Lecture/Ecriture partage Direction"
+    }
+  ],
+  "tieringAccounts": [
+    {
+      "samAccountName": "adm-t0-mathis",
+      "targetOU": "OU=T0-Admins,OU=Administration,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Compte d'administration Tier 0 (Controleurs de domaine, PKI, AD DS)",
+      "tier": 0
+    },
+    {
+      "samAccountName": "adm-t1-mathis",
+      "targetOU": "OU=T1-Admins,OU=Administration,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Compte d'administration Tier 1 (Serveurs membres, Web, BDD)",
+      "tier": 1
+    },
+    {
+      "samAccountName": "adm-t2-mathis",
+      "targetOU": "OU=T2-Admins,OU=Administration,OU=Nexus360,DC=ad,DC=nexus360,DC=test",
+      "description": "Compte d'administration Tier 2 (Postes de travail Windows 11)",
+      "tier": 2
+    }
+  ]
+}
